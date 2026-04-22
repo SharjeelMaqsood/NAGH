@@ -1,3 +1,4 @@
+using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -23,8 +24,10 @@ public class Controller : MonoBehaviour
     private Vector3 velocity;
     public bool isGrounded;
     private float currentSpeed;
+    
     private float verticalVelocity;
-
+    private bool isOpen = false;
+    
     public float CurrentSpeed => currentSpeed;
     public Vector2 MoveInput => moveInput;
     public bool IsShiftPressed => Keyboard.current.leftShiftKey.isPressed;
@@ -40,8 +43,10 @@ public class Controller : MonoBehaviour
         currentSpeed = moveSpeed;
     }
 
+  
     private void Update()
     {
+
         isGrounded = characterController.isGrounded;
 
         // Speed handling
@@ -77,6 +82,7 @@ public class Controller : MonoBehaviour
         Vector3 camForward = cameraTransform.forward;
         Vector3 camRight = cameraTransform.right;
 
+        
         camForward.y = 0f;
         camRight.y = 0f;
 
@@ -92,11 +98,16 @@ public class Controller : MonoBehaviour
         {
             Vector3 moveDirection = move;
 
+            
             if (moveDirection.sqrMagnitude < 0.01f)
                 return;
 
+            
+            moveDirection.y = 0f;
+            moveDirection.Normalize();
+
             //Prevent backward jitter
-            float forwardDot = Vector3.Dot(transform.forward, moveDirection.normalized);
+            float forwardDot = Vector3.Dot(transform.forward, moveDirection);
 
             if (forwardDot < -0.5f)
                 return;

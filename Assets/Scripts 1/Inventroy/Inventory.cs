@@ -17,18 +17,17 @@ public class Inventory : MonoBehaviour
 
     private GameObject currentWeapon;
 
-    // =========================
-    // ADD ITEM (FIXED + SAFE)
-    // =========================
+  
     public bool AddItem(ItemData item, int amount = 1)
     {
+       
         if (item == null)
         {
             Debug.LogError("AddItem called with NULL item!");
             return false;
         }
 
-        // 1. STACKING (SAFE)
+        
         if (item.isStackable)
         {
             foreach (var slot in slots)
@@ -45,14 +44,13 @@ public class Inventory : MonoBehaviour
             }
         }
 
-        // 2. SPACE CHECK
+      
         if (slots.Count >= maxSlots)
         {
             Debug.Log("Inventory Full");
             return false;
         }
 
-        // 3. NEW SLOT
         InventorySlot newSlot = new InventorySlot
         {
             item = item,
@@ -63,20 +61,12 @@ public class Inventory : MonoBehaviour
 
         inventoryUI.RefreshUI();
 
-        // 4. AUTO EQUIP ONLY WEAPONS
-        if (item.itemType == ItemType.Equipment)
-        {
-            EquipItem(item);
-        }
-
         return true;
     }
 
-    // =========================
-    // EQUIP ITEM (SAFE)
-    // =========================
     public void EquipItem(ItemData item)
     {
+      
         if (item == null || item.equippedPrefab == null)
             return;
 
@@ -89,9 +79,7 @@ public class Inventory : MonoBehaviour
         currentWeapon.transform.localRotation = Quaternion.Euler(weaponRotationOffset);
     }
 
-    // =========================
-    // USE ITEM (FIXED SLOT SAFETY)
-    // =========================
+  
     public void UseItem(InventorySlot slot)
     {
         if (slot == null || slot.item == null)
@@ -106,7 +94,6 @@ public class Inventory : MonoBehaviour
 
         slot.quantity--;
 
-        // REMOVE SLOT PROPERLY (IMPORTANT FIX)
         if (slot.quantity <= 0)
         {
             slots.Remove(slot);
@@ -114,11 +101,6 @@ public class Inventory : MonoBehaviour
 
         inventoryUI.RefreshUI();
     }
-
-    // =========================
-    // CONSUMABLE
-    // =========================
-    // In Inventory.cs - Add this to UseConsumable
     void UseConsumable(ItemData item)
     {
         Debug.Log($"UseConsumable called - Item: {item.itemName}, Value: {item.value}, Health: {(health != null ? health.currentHealth.ToString() : "NULL")}");

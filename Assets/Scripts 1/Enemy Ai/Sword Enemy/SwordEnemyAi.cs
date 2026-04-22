@@ -11,39 +11,47 @@ public class SwordEnemyAi : MonoBehaviour
         Attack
     }
 
+
     [Header("State")]
     [SerializeField] private State currentState;
 
     [Header("References")]
     [SerializeField] private Transform player;
-    [SerializeField] private Transform[] patrolPoints;
     private AnimationContE1 animController;
 
     [Header("Ranges")]
     [SerializeField] private float detectionRange = 10f;
     [SerializeField] private float attackRange = 2f;
 
+    [Header("Roaming")]
+    [SerializeField] private float roamRadius = 8f;
+    [SerializeField] private float roamDelay = 2f;
+    private Vector3 homePosition;
+
+
     [Header("Memory")]
     [SerializeField] private float memoryDuration = 3f;
 
+   
     private Vector3 lastKnownPosition;
     private float memoryTimer;
+    private float roamTimer;
 
     private NavMeshAgent agent;
-    private int patrolIndex = 0;
 
+    [Header("Attack")]
     [SerializeField] private float attackCooldown = 2f;
     private float lastAttackTime;
-
     private bool isAttacking;
 
     void Start()
     {
+        homePosition = transform.position;
         agent = GetComponent<NavMeshAgent>();
         animController = GetComponent<AnimationContE1>();
 
         currentState = State.Patrol;
-        GoToNextPatrolPoint();
+        PickRandomRoamPoint();
     }
 
     void Update()
@@ -57,24 +65,46 @@ public class SwordEnemyAi : MonoBehaviour
         }
     }
 
+    // ---------------- ROAM (NO PATROL POINTS) ----------------
     void Patrol()
     {
-        // Each state owns its own movement update — no global override in Update
-        animController.UpdateMovement(agent.velocity.magnitude);
-
         agent.isStopped = false;
 
-        if (!agent.pathPending && agent.remainingDistance < 0.5f)
-            GoToNextPatrolPoint();
+        animController.UpdateMovement(agent.velocity.magnitude);
+
+        roamTimer -= Time.deltaTime;
+
+        if (roamTimer <= 0f && !agent.pathPending && agent.remainingDistance < 0.5f)
+        {
+            PickRandomRoamPoint();
+        }
 
         DetectPlayer();
     }
 
+    void PickRandomRoamPoint()
+    {
+        Vector3 randomDirection = Random.insideUnitSphere * roamRadius;
+        randomDirection += homePosition;
+
+        NavMeshHit hit;
+
+        if (NavMesh.SamplePosition(randomDirection, out hit, roamRadius, NavMesh.AllAreas))
+        {
+            agent.SetDestination(hit.position);
+        }
+
+        roamTimer = roamDelay;
+    }
+
+    // ---------------- CHASE ----------------
     void Chase()
     {
+        agent.isStopped = false;
+
         animController.UpdateMovement(agent.velocity.magnitude);
 
-        agent.isStopped = false;
+        if (player == null) return;
 
         lastKnownPosition = player.position;
         memoryTimer = memoryDuration;
@@ -89,32 +119,41 @@ public class SwordEnemyAi : MonoBehaviour
         }
     }
 
+    // ---------------- SEARCH ----------------
     void Search()
     {
-        animController.UpdateMovement(agent.velocity.magnitude);
-
         agent.isStopped = false;
+
+        animController.UpdateMovement(agent.velocity.magnitude);
 
         agent.SetDestination(lastKnownPosition);
 
         memoryTimer -= Time.deltaTime;
 
         if (memoryTimer <= 0f)
+        {
             currentState = State.Patrol;
+            PickRandomRoamPoint();
+        }
+
+        DetectPlayer();
     }
 
+    // ---------------- ATTACK ----------------
     void Attack()
     {
         agent.isStopped = true;
-        agent.velocity = Vector3.zero; // Kill residual sliding momentum
+        agent.velocity = Vector3.zero;
 
-        animController.UpdateMovement(0); // Locked to 0, nothing can override it now
+        animController.UpdateMovement(0);
+
+        if (player == null) return;
 
         LookAt(player.position);
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        if (distance > attackRange)
+        if (distance > attackRange + 0.5f)
         {
             currentState = State.Chase;
             isAttacking = false;
@@ -124,46 +163,52 @@ public class SwordEnemyAi : MonoBehaviour
         if (!isAttacking && Time.time - lastAttackTime >= attackCooldown)
         {
             animController.TriggerAttack();
-            lastAttackTime = Time.time;
             isAttacking = true;
-
-            // Safety fallback: reset isAttacking even if no Animation Event fires
-            Invoke(nameof(EndAttack), attackCooldown * 0.9f);
+            lastAttackTime = Time.time;
         }
     }
 
+    // ---------------- DETECT ----------------
     void DetectPlayer()
     {
+        if (player == null) return;
+
         float distance = Vector3.Distance(transform.position, player.position);
 
         if (distance <= detectionRange)
             currentState = State.Chase;
     }
 
-    void GoToNextPatrolPoint()
-    {
-        if (patrolPoints.Length == 0) return;
-
-        agent.SetDestination(patrolPoints[patrolIndex].position);
-        patrolIndex = (patrolIndex + 1) % patrolPoints.Length;
-    }
-
+    // ---------------- LOOK ----------------
     void LookAt(Vector3 target)
     {
-        Vector3 dir = (target - transform.position);
+        Vector3 dir = target - transform.position;
         dir.y = 0;
 
-        if (dir != Vector3.zero)
-        {
-            Quaternion rot = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 5f);
-        }
+        if (dir == Vector3.zero) return;
+
+        Quaternion rot = Quaternion.LookRotation(dir);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 6f);
     }
 
-    // Called by Animation Event at the end of the attack clip
+    // ---------------- EVENTS ----------------
     public void EndAttack()
     {
-        CancelInvoke(nameof(EndAttack)); // Cancel the fallback if the real event fired
         isAttacking = false;
+    }
+
+    public void DealDamage()
+    {
+        float radius = 2f;
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, radius);
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Player"))
+            {
+                hit.GetComponent<Health>()?.ChangeHealth(10);
+            }
+        }
     }
 }

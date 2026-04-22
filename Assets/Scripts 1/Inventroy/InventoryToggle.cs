@@ -3,39 +3,43 @@ using UnityEngine.InputSystem;
 
 public class InventoryToggle : MonoBehaviour
 {
+    [Header("UI")]
     public GameObject inventoryUI;
 
-    public InputAction toggleInventory; // assign in inspector
+    [Header("Input")]
+    [SerializeField] private InputAction toggleInventory;
+
+    [Header("Reference")]
+    [SerializeField] private CursorUnlocker cursorUnlocker;
+
     private bool isOpen = false;
 
-    void OnEnable()
+    private void OnEnable()
     {
         toggleInventory.Enable();
     }
 
-    void OnDisable()
+    private void OnDisable()
     {
         toggleInventory.Disable();
     }
 
-    void Update()
+    private void Start()
     {
-        if (toggleInventory.WasPressedThisFrame()) // better than IsPressed
-        {
-            isOpen = !isOpen;
-            inventoryUI.SetActive(isOpen);
+        inventoryUI.SetActive(false);
+    }
 
-            // Cursor handling
-            if (isOpen)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
+    private void Update()
+    {
+        if (!toggleInventory.WasPressedThisFrame())
+            return;
+
+        isOpen = !isOpen;
+        inventoryUI.SetActive(isOpen);
+
+        if (cursorUnlocker != null)
+        {
+            cursorUnlocker.ForceState(isOpen);
         }
     }
 }

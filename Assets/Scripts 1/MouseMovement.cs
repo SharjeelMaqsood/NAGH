@@ -7,7 +7,8 @@ public class MouseMovement : MonoBehaviour
     public float mouseSensitivity = 100f;
     private PlayerInputActions controls;
     float xRotation = 0f;
-    float YRotation = 0f;
+    float yRotation = 0f;
+    [SerializeField] private Transform playerBody;
 
     public void Awake()
     {
@@ -34,16 +35,25 @@ public class MouseMovement : MonoBehaviour
         float mouseX = mouseInput.x * mouseSensitivity * Time.deltaTime;
         float mouseY = mouseInput.y * mouseSensitivity * Time.deltaTime;
 
-        //control rotation around x axis (Look up and down)
+        
         xRotation -= mouseY;
 
-        //we clamp the rotation so we cant Over-rotate (like in real life)
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-        //control rotation around y axis (Look up and down)
-        YRotation += mouseX;
+       
+        yRotation += mouseX;
 
-        //applying both rotations
-        transform.localRotation = Quaternion.Euler(xRotation, YRotation, 0f);
+       
+        transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+    }
+    public void ResetLook()
+    {
+        xRotation = 0f;
+
+        // keep current yaw, don’t reset movement freedom
+        if (playerBody != null)
+            yRotation = playerBody.eulerAngles.y;
+
+        transform.localRotation = Quaternion.Euler(0f, yRotation, 0f);
     }
 }

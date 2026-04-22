@@ -8,7 +8,7 @@ public class CameraSwitcher : MonoBehaviour
     public Camera firstPersonCamera;
     public GameObject thirdPersonCamera;
 
-    public MonoBehaviour mouseLookScript;
+    public MouseMovement mouseLookScript;
 
     private bool isFirstPerson = true;
 
@@ -38,6 +38,11 @@ public class CameraSwitcher : MonoBehaviour
 
         mouseLookScript.enabled = true;
 
+        transform.rotation = Quaternion.identity;
+
+        
+        mouseLookScript.ResetLook();
+
         isFirstPerson = true;
     }
 
@@ -48,8 +53,10 @@ public class CameraSwitcher : MonoBehaviour
 
         mouseLookScript.enabled = false;
 
-        Vector3 rot = transform.eulerAngles;
-        transform.eulerAngles = new Vector3(0f, rot.y, 0f);
+       
+        transform.rotation = Quaternion.identity;
+
+        thirdPersonCamera.transform.rotation = Quaternion.LookRotation(transform.forward);
 
         isFirstPerson = false;
     }

@@ -16,8 +16,11 @@ public class PlayerDodge : MonoBehaviour
     public Animator animator;
     public GameObject effect;
 
+    public Controller movement;
+    public bool canMove = true;
     private bool canUse = true;
     public bool isInvincible = false;
+    private bool isDodging = false; 
 
     public void OnDodge(InputValue value)
     {
@@ -27,45 +30,35 @@ public class PlayerDodge : MonoBehaviour
         }
     }
 
+
     IEnumerator DodgeAbility()
     {
         canUse = false;
         isInvincible = true;
+        isDodging = true;
 
-        // 🎬 Animation
-        if (animator != null)
-            animator.SetTrigger("Dodge");
+        animator.SetTrigger("Dodge");
 
-        // ⚡ Effect
         if (effect != null)
             Instantiate(effect, transform.position, Quaternion.identity);
 
-        // 💥 AOE Damage
-        Collider[] hits = Physics.OverlapSphere(transform.position, aoeRadius);
-
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Enemy"))
-            {
-                hit.GetComponent<EnemyHealth>()?.TakeDamage(aoeDamage);
-            }
-        }
-
-        // 🛡️ Invincibility duration
+    
         yield return new WaitForSeconds(invincibilityTime);
 
         isInvincible = false;
+        isDodging = false;
 
-        // ⏳ Cooldown
         yield return new WaitForSeconds(cooldown);
 
         canUse = true;
     }
 
-    // 🧠 Debug AOE radius
-    void OnDrawGizmosSelected()
+
+    void OnAnimatorMove()
     {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, aoeRadius);
+        if (!isDodging) return;
+
+        
+        transform.position += animator.deltaPosition * 0.15f;
     }
 }
