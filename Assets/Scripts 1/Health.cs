@@ -1,6 +1,7 @@
 using UnityEngine;
 using MagicPigGames;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class Health : MonoBehaviour
@@ -31,14 +32,15 @@ public class Health : MonoBehaviour
 
     void OnEnable()
     {
+
         controls.Enable();
-        
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void OnDisable()
     {
-        
         controls.Disable();
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void Start()
@@ -50,6 +52,8 @@ public class Health : MonoBehaviour
         currentHealth = maxHealth;
 
         UpdateBar();
+
+
 
         deathCanvasGroup = deathUI.GetComponent<CanvasGroup>();
         deathCanvasGroup.alpha = 0f;
@@ -107,12 +111,11 @@ public class Health : MonoBehaviour
 
     void UpdateBar()
     {
-        float percent = (float)currentHealth / maxHealth;
+        if (progressBar == null) return;
 
-        // keep inverted if your bar needs it
+        float percent = (float)currentHealth / maxHealth;
         progressBar.SetProgress(1f - percent);
     }
-
     void Die()
     {
         if (isDead) return;
@@ -141,7 +144,7 @@ public class Health : MonoBehaviour
 
         deathCanvasGroup.alpha = 1f;
 
-        Time.timeScale = 0f;
+        Time.timeScale = 0.2f;
     }
     IEnumerator HitPause()
     {
@@ -149,4 +152,14 @@ public class Health : MonoBehaviour
         yield return new WaitForSecondsRealtime(0.03f);
         Time.timeScale = 1f;
     }
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        bool isGameScene = scene.buildIndex == 1; // your game scene index
+
+        if (progressBar != null)
+            progressBar.gameObject.SetActive(isGameScene);
+
+        if (deathUI != null)
+            deathUI.SetActive(false); // never show death UI in menu
+    } 
 }

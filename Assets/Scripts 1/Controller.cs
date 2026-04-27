@@ -26,7 +26,7 @@ public class Controller : MonoBehaviour
     private float currentSpeed;
     
     private float verticalVelocity;
-    private bool isOpen = false;
+   
     
     public float CurrentSpeed => currentSpeed;
     public Vector2 MoveInput => moveInput;

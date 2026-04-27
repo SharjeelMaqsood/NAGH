@@ -11,13 +11,14 @@ public class SwordEnemyAi : MonoBehaviour
         Attack
     }
 
-
     [Header("State")]
     [SerializeField] private State currentState;
 
     [Header("References")]
     [SerializeField] private Transform player;
     private AnimationContE1 animController;
+    private NavMeshAgent agent;
+    private EnemyHealth health;
 
     [Header("Ranges")]
     [SerializeField] private float detectionRange = 10f;
@@ -28,16 +29,12 @@ public class SwordEnemyAi : MonoBehaviour
     [SerializeField] private float roamDelay = 2f;
     private Vector3 homePosition;
 
-
     [Header("Memory")]
     [SerializeField] private float memoryDuration = 3f;
 
-   
     private Vector3 lastKnownPosition;
     private float memoryTimer;
     private float roamTimer;
-
-    private NavMeshAgent agent;
 
     [Header("Attack")]
     [SerializeField] private float attackCooldown = 2f;
@@ -49,6 +46,7 @@ public class SwordEnemyAi : MonoBehaviour
         homePosition = transform.position;
         agent = GetComponent<NavMeshAgent>();
         animController = GetComponent<AnimationContE1>();
+        health = GetComponent<EnemyHealth>();
 
         currentState = State.Patrol;
         PickRandomRoamPoint();
@@ -56,6 +54,8 @@ public class SwordEnemyAi : MonoBehaviour
 
     void Update()
     {
+        if (health != null && health.isDead) return;
+
         switch (currentState)
         {
             case State.Patrol: Patrol(); break;
@@ -65,11 +65,11 @@ public class SwordEnemyAi : MonoBehaviour
         }
     }
 
-    // ---------------- ROAM (NO PATROL POINTS) ----------------
     void Patrol()
     {
-        agent.isStopped = false;
+        if (health.isDead) return;
 
+        agent.isStopped = false;
         animController.UpdateMovement(agent.velocity.magnitude);
 
         roamTimer -= Time.deltaTime;
@@ -84,24 +84,35 @@ public class SwordEnemyAi : MonoBehaviour
 
     void PickRandomRoamPoint()
     {
-        Vector3 randomDirection = Random.insideUnitSphere * roamRadius;
-        randomDirection += homePosition;
-
-        NavMeshHit hit;
-
-        if (NavMesh.SamplePosition(randomDirection, out hit, roamRadius, NavMesh.AllAreas))
+        for (int i = 0; i < 10; i++)
         {
-            agent.SetDestination(hit.position);
+            Vector3 randomDirection = Random.insideUnitSphere * roamRadius;
+            randomDirection += homePosition;
+
+            NavMeshHit hit;
+
+            if (NavMesh.SamplePosition(randomDirection, out hit, roamRadius, NavMesh.AllAreas))
+            {
+                if (!Physics.Raycast(hit.position, Vector3.forward, 1.5f) &&
+                    !Physics.Raycast(hit.position, -Vector3.forward, 1.5f) &&
+                    !Physics.Raycast(hit.position, Vector3.right, 1.5f) &&
+                    !Physics.Raycast(hit.position, -Vector3.right, 1.5f))
+                {
+                    agent.SetDestination(hit.position);
+                    roamTimer = roamDelay;
+                    return;
+                }
+            }
         }
 
         roamTimer = roamDelay;
     }
 
-    // ---------------- CHASE ----------------
     void Chase()
     {
-        agent.isStopped = false;
+        if (health.isDead) return;
 
+        agent.isStopped = false;
         animController.UpdateMovement(agent.velocity.magnitude);
 
         if (player == null) return;
@@ -119,11 +130,11 @@ public class SwordEnemyAi : MonoBehaviour
         }
     }
 
-    // ---------------- SEARCH ----------------
     void Search()
     {
-        agent.isStopped = false;
+        if (health.isDead) return;
 
+        agent.isStopped = false;
         animController.UpdateMovement(agent.velocity.magnitude);
 
         agent.SetDestination(lastKnownPosition);
@@ -139,9 +150,10 @@ public class SwordEnemyAi : MonoBehaviour
         DetectPlayer();
     }
 
-    // ---------------- ATTACK ----------------
     void Attack()
     {
+        if (health.isDead) return;
+
         agent.isStopped = true;
         agent.velocity = Vector3.zero;
 
@@ -168,9 +180,10 @@ public class SwordEnemyAi : MonoBehaviour
         }
     }
 
-    // ---------------- DETECT ----------------
     void DetectPlayer()
     {
+        if (health.isDead) return;
+
         if (player == null) return;
 
         float distance = Vector3.Distance(transform.position, player.position);
@@ -179,7 +192,6 @@ public class SwordEnemyAi : MonoBehaviour
             currentState = State.Chase;
     }
 
-    // ---------------- LOOK ----------------
     void LookAt(Vector3 target)
     {
         Vector3 dir = target - transform.position;
@@ -191,7 +203,6 @@ public class SwordEnemyAi : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 6f);
     }
 
-    // ---------------- EVENTS ----------------
     public void EndAttack()
     {
         isAttacking = false;

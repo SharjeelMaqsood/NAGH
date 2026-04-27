@@ -1,16 +1,16 @@
 using UnityEngine;
+using UnityEngine.AI;
+using System.Collections;
 
 public class EnemyHealth : MonoBehaviour
 {
+    public bool isDead = false;
     public int maxHealth = 100;
     private int currentHealth;
 
     private Animator animator;
     private Rigidbody rb;
-
-    [Header("Knockback")]
-    public float knockbackForce = 3f;
-    public Transform player; // assign player here
+    private NavMeshAgent agent;
 
     void Start()
     {
@@ -18,42 +18,51 @@ public class EnemyHealth : MonoBehaviour
 
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
+        agent = GetComponent<NavMeshAgent>();
     }
 
     public void TakeDamage(int damage)
     {
+        if (isDead) return;
+
         currentHealth -= damage;
 
-        Debug.Log(gameObject.name + " took damage: " + damage);
-
-        // Play hit animation
         if (animator != null)
         {
             animator.SetTrigger("Hit");
         }
 
-        // Knockback using player position
-        if (rb != null && player != null)
-        {
-            Vector3 knockDir = (transform.position - player.position).normalized;
-            rb.AddForce(knockDir * knockbackForce, ForceMode.Impulse);
-        }
-
         if (currentHealth <= 0)
         {
-            Die();
+            StartCoroutine(DeathRoutine());
         }
     }
 
-    void Die()
+    IEnumerator DeathRoutine()
     {
-        Debug.Log(gameObject.name + " died");
+        if (isDead) yield break;
+
+        isDead = true;
+
+        if (agent != null)
+            agent.isStopped = true;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
 
         if (animator != null)
         {
+            animator.ResetTrigger("Hit");
             animator.SetTrigger("Die");
         }
 
-        Destroy(gameObject, 2.6f);
+        GetComponent<SwordEnemyAi>().enabled = false;
+
+        yield return new WaitForSeconds(2.2f);
+
+        Destroy(gameObject);
     }
 }

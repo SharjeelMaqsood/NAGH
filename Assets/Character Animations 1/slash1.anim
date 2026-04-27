@@ -11601,7 +11601,7 @@ AnimationClip:
   m_HasMotionFloatCurves: 0
   m_Events:
   - time: 0.5
-    functionName: PlaySwordAttackSound
+    functionName: AnimLightHit
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0

@@ -13,19 +13,24 @@ public class TutorialManager : MonoBehaviour
 
     private int currentIndex = 0;
 
+    private const string TUTORIAL_KEY = "TutorialShown";
+
     void Start()
+
     {
-        ShowTutorialAtStart();
+        PlayerPrefs.DeleteAll();
+        // Only show if NOT shown before
+        if (PlayerPrefs.GetInt(TUTORIAL_KEY, 0) == 0)
+        {
+            ShowTutorial();
+        }
+        else
+        {
+            tutorialPanel.SetActive(false);
+        }
     }
 
-    public void ShowTutorialAtStart()
-    {
-        tutorialPanel.SetActive(true);
-        currentIndex = 0;
-        UpdateTutorial();
-    }
-
-    public void OpenTutorialFromMenu()
+    void ShowTutorial()
     {
         tutorialPanel.SetActive(true);
         currentIndex = 0;
@@ -49,7 +54,6 @@ public class TutorialManager : MonoBehaviour
     {
         tutorialImage.sprite = tutorialSprites[currentIndex];
 
-        // If last image → show close button instead of next
         if (currentIndex == tutorialSprites.Length - 1)
         {
             nextButton.gameObject.SetActive(false);
@@ -65,5 +69,9 @@ public class TutorialManager : MonoBehaviour
     public void CloseTutorial()
     {
         tutorialPanel.SetActive(false);
+
+        // Mark as shown forever
+        PlayerPrefs.SetInt(TUTORIAL_KEY, 1);
+        PlayerPrefs.Save();
     }
 }

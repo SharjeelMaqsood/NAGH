@@ -8,15 +8,18 @@ public class CharacterSoundController : MonoBehaviour
     [Header("Footsteps")]
     public AudioClip walkFootstep;
     public AudioClip runFootstep;
+    public float footstepVolume = 0.6f;
 
     [Header("Actions")]
     public AudioClip jumpSound;
-    public AudioClip swordAttackSound;
+    public AudioClip swingSound;
+    public AudioClip hitConfirmSound;
     public AudioClip dodgeSound;
-    public AudioClip hitSound;
+    public float actionVolume = 1f;
 
-    [Header("Settings")]
-    public float volume = 1f;
+    [Header("Master Volume")]
+    [Range(0f, 1f)]
+    public float masterVolume = 1f;
 
     [Header("Footstep Timing")]
     public float walkStepDelay = 0.5f;
@@ -31,14 +34,14 @@ public class CharacterSoundController : MonoBehaviour
     }
 
     // -------------------------
-    // FOOTSTEPS WITH CONTROL
+    // FOOTSTEPS
     // -------------------------
 
     public void PlayWalkFootstep()
     {
         if (Time.time - lastStepTime < walkStepDelay) return;
 
-        PlaySound(walkFootstep);
+        PlaySound(walkFootstep, footstepVolume);
         lastStepTime = Time.time;
     }
 
@@ -46,7 +49,7 @@ public class CharacterSoundController : MonoBehaviour
     {
         if (Time.time - lastStepTime < runStepDelay) return;
 
-        PlaySound(runFootstep);
+        PlaySound(runFootstep, footstepVolume);
         lastStepTime = Time.time;
     }
 
@@ -54,34 +57,20 @@ public class CharacterSoundController : MonoBehaviour
     // ACTIONS
     // -------------------------
 
-    public void PlayJumpSound()
-    {
-        PlaySound(jumpSound);
-    }
-
-    public void PlaySwordAttackSound()
-    {
-        PlaySound(swordAttackSound);
-    }
-
-    public void PlayDodgeSound()
-    {
-        PlaySound(dodgeSound);
-    }
-
-    public void PlayHitSound()
-    {
-        PlaySound(hitSound);
-    }
+    public void PlayJumpSound() => PlaySound(jumpSound, actionVolume);
+    public void PlaySwingSound() => PlaySound(swingSound, actionVolume);
+    public void PlayHitConfirmSound() => PlaySound(hitConfirmSound, actionVolume);
+    public void PlayDodgeSound() => PlaySound(dodgeSound, actionVolume);
 
     // -------------------------
     // CORE
     // -------------------------
 
-    private void PlaySound(AudioClip clip)
+    private void PlaySound(AudioClip clip, float categoryVolume)
     {
         if (clip == null) return;
 
-        audioSource.PlayOneShot(clip, volume);
+        float finalVolume = categoryVolume * masterVolume;
+        audioSource.PlayOneShot(clip, finalVolume);
     }
 }

@@ -79,7 +79,7 @@ public class Inventory : MonoBehaviour
         currentWeapon.transform.localRotation = Quaternion.Euler(weaponRotationOffset);
     }
 
-  
+
     public void UseItem(InventorySlot slot)
     {
         if (slot == null || slot.item == null)
@@ -89,14 +89,19 @@ public class Inventory : MonoBehaviour
         {
             case ItemType.Consumable:
                 UseConsumable(slot.item);
+
+                slot.quantity--;
+
+                if (slot.quantity <= 0)
+                {
+                    slots.Remove(slot);
+                }
                 break;
-        }
 
-        slot.quantity--;
-
-        if (slot.quantity <= 0)
-        {
-            slots.Remove(slot);
+            case ItemType.Equipment:
+                // ONLY EQUIP — DO NOT REMOVE OR DECREASE
+                EquipItem(slot.item);
+                break;
         }
 
         inventoryUI.RefreshUI();

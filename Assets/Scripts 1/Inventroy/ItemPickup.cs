@@ -11,11 +11,14 @@ public class ItemPickup : MonoBehaviour
 
         if (added)
         {
+            // AUTO EQUIP IF WEAPON
+            if (item != null && item.itemType == ItemType.Equipment)
+            {
+                inventory.EquipItem(item);
+            }
+
             Destroy(gameObject);
-      
-
         }
-
     }
 
     private void OnTriggerEnter(Collider other)

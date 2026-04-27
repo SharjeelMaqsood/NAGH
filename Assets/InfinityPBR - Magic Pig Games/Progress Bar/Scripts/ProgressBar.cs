@@ -7,6 +7,9 @@ namespace MagicPigGames
     [Serializable]
     public class ProgressBar : MonoBehaviour
     {
+
+        public CanvasGroup canvasGroup;
+
         [Header("Overlay Bar")]
         [Tooltip("This is the bar that moves to show progress, covering the fill bar.")]
         public RectTransform overlayBar;
@@ -24,6 +27,7 @@ namespace MagicPigGames
         
         [Header("Plumbing")]
         public RectTransform rectTransform;
+
         
         private float _progress = 0f; // This is the runtime value for progress!
         protected float _elapsedTime = 0f;
@@ -46,6 +50,18 @@ namespace MagicPigGames
         /// Sets the progress bar to the given value between 0 and 1. Compute the percent and pass that in.
         /// </summary>
         /// <param name="progress"></param>
+        /// 
+
+
+        private void Start()
+        {
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+        }
         public virtual void SetProgress(float progress)
         {
             if (progress is > 1 or < 0)
